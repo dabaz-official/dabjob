@@ -1,0 +1,89 @@
+# ─── DabJob ────────────────────────────────────────────────────────────────
+# The database is the point of this project, and it is also the most private
+# thing on your machine. Nothing that could contain real career data is
+# committed. If you are adding a rule here, ask first: "could this file ever
+# hold a résumé, a recruiter thread, or a salary number?"
+
+# ─── Your data ─────────────────────────────────────────────────────────────
+# app.db, queue.db, backups/ and anything else under the data directory.
+data/
+
+# A stray database anywhere else is still private data.
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Redacted, but not safe by default.
+debug-bundles/
+
+# Default output location for exports.
+exports/
+
+# ─── Secrets ───────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ─── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.eggs/
+*.egg-info/
+__pypackages__/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Local interpreter preference. The supported range is in ROADMAP §2.
+.python-version
+
+# ─── Node ──────────────────────────────────────────────────────────────────
+node_modules/
+.npm/
+.yarn/cache
+.yarn/unplugged
+.pnp.*
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── Build output ──────────────────────────────────────────────────────────
+dist/
+build/
+
+# ─── Test output ───────────────────────────────────────────────────────────
+playwright-report/
+test-results/
+
+# ─── Editors and OS ────────────────────────────────────────────────────────
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ─── Agent and tool session state ──────────────────────────────────────────
+.zcode/
+
+# ─── Logs ──────────────────────────────────────────────────────────────────
+*.log
