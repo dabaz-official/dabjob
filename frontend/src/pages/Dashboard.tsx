@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 
 import { type JobSummary, fetchJobs } from "../api";
+import JobCard from "../components/JobCard";
 import PastePanel from "../components/PastePanel";
 import { t } from "../i18n";
 
@@ -12,52 +13,6 @@ const dotClass: Record<Health, string> = {
   ok: "bg-emerald-500",
   unreachable: "bg-red-500",
 };
-
-/**
- * The API returns a snippet with `<mark>` markers around the match. It is
- * rendered as elements rather than injected as HTML: the text originated in
- * a job posting, and a posting is attacker-controlled.
- */
-function Snippet({ text }: { text: string }) {
-  const chunks = text.split(/<mark>([\s\S]*?)<\/mark>/g);
-
-  return (
-    <>
-      {chunks.map((chunk, index) =>
-        index % 2 === 1 ? (
-          <mark key={index} className="rounded bg-yellow-200 px-0.5 text-neutral-900">
-            {chunk}
-          </mark>
-        ) : (
-          <span key={index}>{chunk}</span>
-        ),
-      )}
-    </>
-  );
-}
-
-function JobCard({ job }: { job: JobSummary }) {
-  const meta = [job.company_name, job.city, job.salary_text].filter(Boolean).join(" · ");
-
-  return (
-    <li className="rounded-lg border border-neutral-200 bg-white p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h2 className="truncate font-medium">{job.title}</h2>
-          <p className="mt-1 text-sm text-neutral-600">{meta}</p>
-        </div>
-        <span className="shrink-0 rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">
-          {job.platform}
-        </span>
-      </div>
-      {job.snippet ? (
-        <p className="mt-2 text-xs leading-relaxed text-neutral-500">
-          <Snippet text={job.snippet} />
-        </p>
-      ) : null}
-    </li>
-  );
-}
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health>("checking");
@@ -193,7 +148,11 @@ export default function Dashboard() {
           ) : (
             <ul className="space-y-3">
               {jobs.map((job) => (
-                <JobCard job={job} key={job.id} />
+                <JobCard
+                  job={job}
+                  key={job.id}
+                  onChanged={() => setReloadKey((value) => value + 1)}
+                />
               ))}
             </ul>
           )}

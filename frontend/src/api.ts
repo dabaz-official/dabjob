@@ -36,8 +36,7 @@ export async function fetchJobs(query = ""): Promise<JobList> {
   return (await response.json()) as JobList;
 }
 
-export async function pasteJob(text: string): Promise<PasteResult> {
-  const response = await fetch("/api/ingest/paste", {
+export async function pasteJob(text: string): Promise<PasteResult> {  const response = await fetch("/api/ingest/paste", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ text }),
@@ -46,4 +45,25 @@ export async function pasteJob(text: string): Promise<PasteResult> {
     throw new Error(`request failed with ${response.status}`);
   }
   return (await response.json()) as PasteResult;
+}
+
+export type JobChanges = {
+  title?: string;
+  company_name?: string;
+  city?: string | null;
+  url?: string | null;
+  salary_text?: string | null;
+  seniority?: string | null;
+};
+
+export async function updateJob(id: number, changes: JobChanges): Promise<JobSummary> {
+  const response = await fetch(`/api/jobs/${id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(changes),
+  });
+  if (!response.ok) {
+    throw new Error(`request failed with ${response.status}`);
+  }
+  return (await response.json()) as JobSummary;
 }
