@@ -9,21 +9,13 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Annotated
 
-from fastapi import Depends, FastAPI, Query
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from fastapi import FastAPI
 
 from .config import Settings, enforce_bind_policy
 from .db import build_engine, build_sessionmaker
-from .deps import get_session
-from .models import Job
-from .schemas import JobList, JobSummary
-from .search import search_jobs
+from .routes import health, ingest, jobs
 from .static import mount_spa
-
-SessionDep = Annotated[Session, Depends(get_session)]
 
 
 @asynccontextmanager
@@ -48,30 +40,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.state.session_factory = build_sessionmaker(engine)
 
-    @app.get("/api/health")
-    def health() -> dict[str, bool]:
-        return {"ok": True}
-
-    @app.get("/api/jobs")
-    def list_jobs(
-        session: SessionDep,
-        q: Annotated[str | None, Query(description="Full-text query")] = None,
-        limit: Annotated[int, Query(ge=1, le=200)] = 50,
-    ) -> JobList:
-        if q:
-            hits = search_jobs(session, q, limit)
-            return JobList(
-                items=[
-                    JobSummary.model_validate(hit.job).model_copy(update={"snippet": hit.snippet})
-                    for hit in hits
-                ],
-                total=len(hits),
-            )
-
-        jobs = session.scalars(
-            select(Job).order_by(Job.created_at.desc(), Job.id.desc()).limit(limit)
-        ).all()
-        return JobList(items=[JobSummary.model_validate(job) for job in jobs], total=len(jobs))
+    app.include_router(health.router)
+    app.include_router(jobs.router)
+    app.include_router(ingest.router)
 
     mount_spa(app, resolved.static_dir)
 

@@ -1,0 +1,11 @@
+Job title: Senior Platform Engineer
+Company: Blue Harbor
+Location: Remote
+Salary: USD 120k-160k
+
+About the role
+Own the deployment platform behind a dozen services.
+
+Requirements
+Kubernetes in production, Terraform, and enough Go or Python to write the
+tooling you are missing.
