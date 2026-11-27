@@ -42,6 +42,25 @@ class Settings(BaseSettings):
         default="manual",
         validation_alias=AliasChoices("AGENT_PROVIDER", "DABJOB_AGENT_PROVIDER"),
     )
+    agent_base_url: str = Field(
+        default="http://127.0.0.1:11434/v1",
+        validation_alias=AliasChoices("AGENT_BASE_URL", "DABJOB_AGENT_BASE_URL"),
+    )
+    agent_model: str = Field(
+        default="",
+        validation_alias=AliasChoices("AGENT_MODEL", "DABJOB_AGENT_MODEL"),
+    )
+    agent_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("AGENT_API_KEY", "DABJOB_AGENT_API_KEY"),
+    )
+    # Some gateways require a header the OpenAI spec does not define; OpenCode
+    # Zen asks for x-opencode-session. A JSON object keeps this from becoming
+    # one env var per vendor.
+    agent_headers: dict[str, str] = Field(
+        default_factory=dict,
+        validation_alias=AliasChoices("AGENT_HEADERS", "DABJOB_AGENT_HEADERS"),
+    )
 
     @property
     def database_url(self) -> str:

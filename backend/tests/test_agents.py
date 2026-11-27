@@ -123,7 +123,7 @@ def test_manual_is_the_default_transport() -> None:
 
 def test_an_unimplemented_transport_fails_loudly() -> None:
     with pytest.raises(ValueError, match="not implemented"):
-        make_transport(Settings(agent_provider="http"))
+        make_transport(Settings(agent_provider="cli"))
 
 
 def test_agent_provider_is_read_from_the_documented_variable(

@@ -28,7 +28,14 @@ from ..agents.base import TaskEnvelope
 from ..agents.runner import run_task
 from ..deps import get_session
 from ..documents import EmptyDocument, UnsupportedDocument, extract_text
-from ..models import AgentTaskStatus, DocumentKind, Profile, ProfileDocument
+from ..models import (
+    AgentTask,
+    AgentTaskStatus,
+    DocumentKind,
+    Profile,
+    ProfileDocument,
+    utcnow,
+)
 from ..schemas import (
     AssessmentDraft,
     ProfileDocumentDetail,
@@ -153,21 +160,33 @@ def create_assessment(request: Request, session: SessionDep) -> AssessmentDraft:
             status_code=400, detail="upload a résumé before asking for an assessment"
         )
 
+    payload = {
+        "resume_text": document.extracted_text,
+        "target_roles": profile.target_roles,
+        "target_cities": profile.target_cities,
+        "salary_floor": profile.salary_floor,
+        "years_experience": profile.years_experience,
+    }
+
     try:
         transport = make_transport(request.app.state.settings)
     except ValueError as error:
+        # An attempt that never ran is still an attempt worth recording: the
+        # user should be able to see why nothing happened.
+        session.add(
+            AgentTask(
+                kind="analyze_profile",
+                transport=request.app.state.settings.agent_provider or "manual",
+                status=AgentTaskStatus.NOT_CONFIGURED,
+                input=payload,
+                error=str(error),
+                finished_at=utcnow(),
+            )
+        )
+        session.commit()
         raise HTTPException(status_code=503, detail=str(error)) from error
 
-    envelope = TaskEnvelope(
-        task="analyze_profile",
-        input={
-            "resume_text": document.extracted_text,
-            "target_roles": profile.target_roles,
-            "target_cities": profile.target_cities,
-            "salary_floor": profile.salary_floor,
-            "years_experience": profile.years_experience,
-        },
-    )
+    envelope = TaskEnvelope(task="analyze_profile", input=payload)
     task = run_task(session, transport, envelope)
 
     if task.status is not AgentTaskStatus.SUCCEEDED or task.output is None:

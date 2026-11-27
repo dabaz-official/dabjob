@@ -57,6 +57,9 @@ def run_task(
         task.output = output.model_dump(mode="json")
         task.status = AgentTaskStatus.SUCCEEDED
         task.error = None
+        usage = getattr(transport, "last_usage", None)
+        if isinstance(usage, tuple) and len(usage) == 2:
+            task.tokens_in, task.tokens_out = usage
         break
 
     task.finished_at = utcnow()

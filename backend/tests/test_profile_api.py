@@ -150,12 +150,18 @@ def test_an_unimplemented_transport_is_reported_as_unavailable(
 ) -> None:
     client, app = api
     _upload(client)
-    app.state.settings.agent_provider = "http"
+    app.state.settings.agent_provider = "cli"
 
     response = client.post("/api/profile/assessment")
 
     assert response.status_code == 503
     assert "not implemented" in response.json()["detail"]
+
+    with app.state.session_factory() as session:
+        task = session.scalar(select(AgentTask))
+    assert task is not None
+    assert task.status.value == "not_configured"
+    assert task.error is not None and "not implemented" in task.error
 
 
 def test_positioning_and_target_fit_survive_a_save(
