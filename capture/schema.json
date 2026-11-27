@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dabjob.local/capture/schema.json",
+  "title": "CaptureItem",
+  "description": "What one capture adapter returns for one page. The ingest endpoint validates against this, and any adapter that produces it is accepted. Versioned: bump `version` when a field changes meaning, and keep the old adapter working until the new one ships.",
+  "type": "object",
+  "required": ["platform", "title"],
+  "additionalProperties": true,
+  "properties": {
+    "platform": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Which site: 'boss', 'linkedin', …"
+    },
+    "pageKind": {
+      "type": "string",
+      "maxLength": 64,
+      "default": "detail",
+      "description": "'detail' for one posting, 'search' for a list of postings."
+    },
+    "url": {
+      "type": ["string", "null"],
+      "maxLength": 2000,
+      "description": "Canonical URL of the posting, never the URL with a session token."
+    },
+    "externalId": {
+      "type": ["string", "null"],
+      "maxLength": 255,
+      "description": "The platform's own id. Preferred dedupe key; the fallback is company|title|city."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "company": {
+      "type": ["string", "null"],
+      "maxLength": 255
+    },
+    "city": {
+      "type": ["string", "null"],
+      "maxLength": 120
+    },
+    "salaryText": {
+      "type": ["string", "null"],
+      "maxLength": 255,
+      "description": "As shown on the page. Parsing into a range is the backend's job, not the adapter's."
+    },
+    "seniority": {
+      "type": ["string", "null"],
+      "maxLength": 64
+    },
+    "jdText": {
+      "type": "string",
+      "description": "The posting body, one line per line as shown."
+    }
+  }
+}

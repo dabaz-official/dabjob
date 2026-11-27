@@ -73,6 +73,11 @@ jobs:
       - run: npm ci --prefix frontend
       - run: npm --prefix frontend run build
 
+      - name: Adapter tests
+        run: |
+          npm ci --prefix capture
+          npm --prefix capture test
+
   container:
     name: container smoke test
     runs-on: ubuntu-latest

@@ -3,6 +3,7 @@ VENV := .venv
 PY := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
 NPM := npm --prefix frontend
+CAPTURE_NPM := npm --prefix capture
 CONCURRENTLY := frontend/node_modules/.bin/concurrently
 ALEMBIC := $(VENV)/bin/alembic
 
@@ -14,22 +15,26 @@ $(VENV)/bin/python:
 frontend/node_modules: frontend/package.json
 	$(NPM) install
 
-.PHONY: help setup dev test lint check-private migrate demo import-csv import parse-jd
+capture/node_modules: capture/package.json
+	$(CAPTURE_NPM) install
+
+.PHONY: help setup dev test lint check-private migrate demo import-csv import parse-jd bookmarklet
 
 help: ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
 
-setup: $(VENV)/bin/python frontend/node_modules ## Create the venv and install both sides
+setup: $(VENV)/bin/python frontend/node_modules capture/node_modules ## Create the venv and install every side
 	$(PIP) install --quiet --upgrade pip
 	$(PIP) install --quiet -e "backend[dev]"
 
-dev: $(VENV)/bin/python frontend/node_modules ## Run the API and the Vite dev server together
+dev: $(VENV)/bin/python frontend/node_modules capture/node_modules ## Run the API and the Vite dev server together
 	$(CONCURRENTLY) -k -n api,web -c blue,green \
 		"$(PY) -m uvicorn dabjob.main:app --reload --reload-include '.env' --host $${DABJOB_HOST:-127.0.0.1} --port $${DABJOB_PORT:-8000}" \
 		"$(NPM) run dev"
 
-test: $(VENV)/bin/python ## Run the backend test suite
+test: $(VENV)/bin/python capture/node_modules ## Run the backend and adapter tests
 	$(PY) -m pytest backend/tests
+	$(CAPTURE_NPM) test
 
 migrate: $(VENV)/bin/python ## Apply database migrations
 	$(ALEMBIC) -c backend/alembic.ini upgrade head
@@ -49,8 +54,13 @@ import: migrate ## Import an ai-job-search workspace (DIR=path/to/workspace)
 check-private: ## Fail if private data looks committed
 	$(PY) scripts/check_private_data.py
 
-lint: $(VENV)/bin/python frontend/node_modules check-private ## Run ruff, mypy, tsc and the private-data guard
+lint: $(VENV)/bin/python frontend/node_modules capture/node_modules check-private ## Run ruff, mypy, tsc and the private-data guard
 	$(PY) -m ruff check backend
 	$(PY) -m ruff format --check backend
 	$(PY) -m mypy backend
 	$(NPM) run typecheck
+
+bookmarklet: capture/node_modules ## Build the bookmarklet from .env (ADAPTER=boss-detail)
+	@DABJOB_TOKEN=$$(grep -E '^DABJOB_TOKEN=' .env | cut -d= -f2-) \
+	 DABJOB_ENDPOINT=$$(grep -E '^DABJOB_ENDPOINT=' .env | cut -d= -f2-) \
+	 node capture/build.mjs "$${ADAPTER:-boss-detail}"

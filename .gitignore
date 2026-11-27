@@ -18,6 +18,9 @@ data/
 # Redacted, but not safe by default.
 debug-bundles/
 
+# The generated bookmarklet carries the ingest token.
+capture/dist/
+
 # Default output location for exports.
 exports/
 
