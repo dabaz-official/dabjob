@@ -1,6 +1,6 @@
 # ROADMAP — DabJob
 
-**Status:** M2 complete (2026-11-27). Data layer, ingest, search and the agent protocol are in place; M3 starts the profile.
+**Status:** M3 complete (2026-11-27). Data layer, ingest, search, the profile and a working model transport are in place; M4 starts the capture adapters.
 **What it is:** the local state layer for a job search — a job-search CRM that an AI agent can operate, not a document generator.
 **Scope:** single local user, `localhost`, no auth, no telemetry. zh-CN UI shipped first, i18n-ready from day zero. English repository artifacts.
 **Positioning:** open source, multi-platform, interoperable. BOSS直聘 (`zhipin.com`) is the first capture adapter, not the product.
@@ -245,7 +245,7 @@ Tools are core, not an extension point: they mutate state and are reviewed again
 
 ## 6. Milestones
 
-M0–M2 are complete. M3–M8 are not started; each acceptance line below is the contract for calling its milestone done.
+M0–M3 are complete. M4–M8 are not started; each acceptance line below is the contract for calling its milestone done.
 
 ### M0 — Scaffold, distribution, project policy · S — **done 2026-11-27**
 `backend/` FastAPI app with `/api/health`, SQLAlchemy session, settings, and fail-closed binding; `frontend/` Vite app with router, one empty Dashboard page, all copy behind `t()`; `locales/zh-CN.json`; `Makefile` (`setup`, `dev`, `test`, `lint`); `.env.example`; `.nvmrc`; `Dockerfile` + `compose.yml`; `.github/workflows/ci.yml` running lint, the full test matrix, the production build, the private-data guard, and a container smoke test. (`LICENSE`, `CONTRIBUTING.md`, `GOVERNANCE.md`, `AGENTS.md`, `README.md`, `.gitignore` already landed.)
@@ -262,7 +262,7 @@ Paste-import endpoint parsing title/company/city/salary from raw JD; the integri
 
 **Accept:** paste 5 real JDs, list renders them with parsed fields editable; importing a 100-row spreadsheet creates 100 applications linked to jobs; importing a real `ai-job-search` checkout produces the same application count as its tracker, and a second import adds nothing; a posting with hidden text is stripped and one with instruction-shaped lines is flagged before it can reach any transport; every hostile fixture asserts on both the stripped output and the flags raised.
 
-### M3 — Profile, self-assessment, first transport · M
+### M3 — Profile, self-assessment, first transport · M — **done 2026-11-27**
 Résumé upload (PDF/DOCX/MD) with text extraction; self-intro and target fields; `HttpTransport` implementing the three methods against an OpenAI-compatible endpoint; assessment stored and versioned by transport and model; `AGENT_PROVIDER` selection with `manual` as the default.
 
 **Accept:** upload a real résumé, see extracted text, save an edited assessment that survives reload; `AGENT_PROVIDER=manual` is idempotent; with a local Ollama model the same action returns a schema-valid assessment; a misconfigured endpoint reports `not_configured` and the manual path still works; a schema-invalid response is retried once, then stored raw and surfaced as a failure; a scanned/image-only PDF fails with an explicit message rather than an empty document.

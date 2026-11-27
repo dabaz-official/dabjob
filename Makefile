@@ -25,7 +25,7 @@ setup: $(VENV)/bin/python frontend/node_modules ## Create the venv and install b
 
 dev: $(VENV)/bin/python frontend/node_modules ## Run the API and the Vite dev server together
 	$(CONCURRENTLY) -k -n api,web -c blue,green \
-		"$(PY) -m uvicorn dabjob.main:app --reload --host $${DABJOB_HOST:-127.0.0.1} --port $${DABJOB_PORT:-8000}" \
+		"$(PY) -m uvicorn dabjob.main:app --reload --reload-include '.env' --host $${DABJOB_HOST:-127.0.0.1} --port $${DABJOB_PORT:-8000}" \
 		"$(NPM) run dev"
 
 test: $(VENV)/bin/python ## Run the backend test suite

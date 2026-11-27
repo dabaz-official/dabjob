@@ -5,9 +5,9 @@
 No account. No telemetry. Nothing leaves the machine except a model you configure yourself.
 
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![status: M2 complete](https://img.shields.io/badge/status-M2_complete-brightgreen.svg)](ROADMAP.md)
+[![status: M3 complete](https://img.shields.io/badge/status-M3_complete-brightgreen.svg)](ROADMAP.md)
 
-> **Status: M2 complete (2026-11-27).** A local database with full-text search, three ingest paths (paste, CSV/JSON, an `ai-job-search` importer), the integrity gate, an editable pipeline, and the agent task protocol with its manual transport. M3 adds the résumé profile and the first real transport.
+> **Status: M3 complete (2026-11-27).** A résumé uploads, its text is extracted and cleaned, and a profile can be assessed by a real model over an OpenAI-compatible endpoint. Capture adapters are next. A local database with full-text search, three ingest paths (paste, CSV/JSON, an `ai-job-search` importer), the integrity gate, an editable pipeline, and the agent task protocol with its manual transport. M3 adds the résumé profile and the first real transport.
 
 ## The problem
 
@@ -81,7 +81,7 @@ The full list, with rationale and consequences, is [`ROADMAP.md` §3](ROADMAP.md
 | M0 | Scaffold, Docker, i18n, CI | **done** |
 | M1 | Data layer, search, agent protocol | **done** |
 | M2 | Ingest, integrity gate, `ai-job-search` import | **done** |
-| M3 | Profile, self-assessment, first transport | not started |
+| M3 | Profile, self-assessment, first transport | **done** |
 | M4 | Capture adapters (BOSS直聘 first) | not started |
 | M5 | Skill synthesis and gap matrix | not started |
 | M6 | Scoring, charts, pipeline board | not started |
@@ -101,6 +101,17 @@ make dev        # API on 127.0.0.1:8000, Vite on 127.0.0.1:5173
 Then open **http://127.0.0.1:5173**. The dashboard lists the postings and the search box queries the full-text index; searching `FastAPI` or `PyTorch` finds a demo entry with the match highlighted.
 
 `make demo` is idempotent — running it again inserts nothing. The demo rows are invented: no real person, company, address or phone number.
+
+To use a model, copy `.env.example` to `.env` and set the transport. Anything that speaks `/v1/chat/completions` works — Ollama on your machine, or a gateway such as OpenCode Go:
+
+```bash
+AGENT_PROVIDER=http
+AGENT_BASE_URL=https://opencode.ai/inference/go/openai/v1
+AGENT_MODEL=deepseek-v4.1-flash
+AGENT_API_KEY=...
+```
+
+Leaving `AGENT_PROVIDER=manual` needs no configuration at all; the assessment is then an empty draft you fill in.
 
 The API and the UI run as two processes behind one proxy in development, and as one process in the container:
 
