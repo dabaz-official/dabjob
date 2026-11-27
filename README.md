@@ -5,9 +5,9 @@
 No account. No telemetry. Nothing leaves the machine except a model you configure yourself.
 
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![status: M0](https://img.shields.io/badge/status-M0-lightgrey.svg)](ROADMAP.md)
+[![status: M0 complete](https://img.shields.io/badge/status-M0_complete-brightgreen.svg)](ROADMAP.md)
 
-> **Status: M0 in progress.** The API and UI scaffold run locally; there is no data layer yet. [`ROADMAP.md`](ROADMAP.md) §6 is the build order, and every milestone carries written acceptance criteria. If you are here early, the most useful thing you can do is read the roadmap and tell us what is wrong with it.
+> **Status: M0 complete (2026-11-27).** The API and UI scaffold run, and the container path is verified in CI. There is no data layer yet — the database arrives with M1. [`ROADMAP.md`](ROADMAP.md) §6 is the build order, and every milestone carries written acceptance criteria.
 
 ## The problem
 
@@ -78,7 +78,7 @@ The full list, with rationale and consequences, is [`ROADMAP.md` §3](ROADMAP.md
 
 | | Milestone | State |
 |---|---|---|
-| M0 | Scaffold, Docker, i18n, CI | not started |
+| M0 | Scaffold, Docker, i18n, CI | **done** |
 | M1 | Data layer, search, agent protocol | not started |
 | M2 | Ingest, integrity gate, `ai-job-search` import | not started |
 | M3 | Profile, self-assessment, first transport | not started |
@@ -102,8 +102,10 @@ make dev        # API on 127.0.0.1:8000, Vite on 127.0.0.1:5173
 The API and the UI run as two processes behind one proxy in development, and as one process in the container:
 
 ```bash
-docker compose up   # written, but not yet verified on a machine with Docker
+docker compose up   # then open http://127.0.0.1:8000
 ```
+
+The container path is covered by CI: the image is built, started, and probed for the API and both SPA routes on every push.
 
 Your database lives in `./data`, which is excluded from git. Nothing is written there until M1.
 
