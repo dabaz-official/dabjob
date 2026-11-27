@@ -5,9 +5,9 @@
 No account. No telemetry. Nothing leaves the machine except a model you configure yourself.
 
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![status: planning](https://img.shields.io/badge/status-planning-lightgrey.svg)](ROADMAP.md)
+[![status: M0](https://img.shields.io/badge/status-M0-lightgrey.svg)](ROADMAP.md)
 
-> **Status: planning — no application code yet.** This repository currently holds the roadmap, the merge policy, and the contribution guide. If you are here early, the most useful thing you can do is read [`ROADMAP.md`](ROADMAP.md) and tell us what is wrong with it. Milestones M0–M6 in §6 are the build order; nothing below is runnable today.
+> **Status: M0 in progress.** The API and UI scaffold run locally; there is no data layer yet. [`ROADMAP.md`](ROADMAP.md) §6 is the build order, and every milestone carries written acceptance criteria. If you are here early, the most useful thing you can do is read the roadmap and tell us what is wrong with it.
 
 ## The problem
 
@@ -92,13 +92,20 @@ Each milestone has written acceptance criteria in [`ROADMAP.md` §6](ROADMAP.md#
 
 ## Getting started
 
-**Nothing is runnable yet.** There is no `backend/`, no `frontend/`, and no database. When M0 lands, the intended newcomer path is:
+**The scaffold runs; there is nothing to do in it yet.** The API serves `/api/health`, the UI renders an empty dashboard, and the database arrives with M1.
 
 ```bash
-docker compose up     # planned — not available yet
+make setup      # venv, editable backend install, npm install
+make dev        # API on 127.0.0.1:8000, Vite on 127.0.0.1:5173
 ```
 
-with `make setup && make dev` for contributors who want a local toolchain. If either of those commands fails today, that is expected: the code it would run does not exist.
+The API and the UI run as two processes behind one proxy in development, and as one process in the container:
+
+```bash
+docker compose up   # written, but not yet verified on a machine with Docker
+```
+
+Your database lives in `./data`, which is excluded from git. Nothing is written there until M1.
 
 ## Contributing
 

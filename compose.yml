@@ -1,0 +1,41 @@
+# The newcomer path: no host Python, no host Node.
+#
+# `ports` binds to 127.0.0.1 on purpose. Writing `"8000:8000"` would
+# publish the API to every interface on your machine, which is the exact
+# mistake the app's bind policy exists to prevent.
+#
+# DABJOB_ALLOW_REMOTE is required because the process binds 0.0.0.0
+# inside the container's own network namespace. The loopback port mapping
+# above is what keeps it off the network.
+
+name: dabjob
+
+services:
+  dabjob:
+    build:
+      context: .
+    image: dabjob:dev
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DABJOB_ALLOW_REMOTE: "1"
+      DABJOB_DATA_DIR: /data
+    volumes:
+      # Your database, visible on the host and excluded from git.
+      - ./data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# No worker service yet: background tasks arrive with M1, and the worker
+# shares the same image with a different command.

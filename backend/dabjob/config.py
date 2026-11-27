@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     port: int = 8000
     allow_remote: bool = False
     token: str | None = None
+    static_dir: Path = Path("frontend/dist")
 
     @property
     def database_url(self) -> str:

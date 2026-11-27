@@ -1,0 +1,20 @@
+# Keep the build context small, and never ship a database into an image.
+.git
+.github
+.zcode
+data
+.venv
+.env
+.env.*
+
+frontend/node_modules
+frontend/dist
+
+**/__pycache__
+**/*.pyc
+**/*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+*.log

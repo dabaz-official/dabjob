@@ -14,6 +14,7 @@ from fastapi import FastAPI
 
 from .config import Settings, enforce_bind_policy
 from .db import build_engine
+from .static import mount_spa
 
 
 @asynccontextmanager
@@ -39,6 +40,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/api/health")
     def health() -> dict[str, bool]:
         return {"ok": True}
+
+    mount_spa(app, resolved.static_dir)
 
     return app
 
