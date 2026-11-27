@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1", "[::1]"})
@@ -25,6 +26,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        populate_by_name=True,
     )
 
     data_dir: Path = Path("data")
@@ -33,6 +35,13 @@ class Settings(BaseSettings):
     allow_remote: bool = False
     token: str | None = None
     static_dir: Path = Path("frontend/dist")
+
+    # Documented as AGENT_PROVIDER; the DABJOB_ form is accepted too so a
+    # prefixed environment stays consistent.
+    agent_provider: str = Field(
+        default="manual",
+        validation_alias=AliasChoices("AGENT_PROVIDER", "DABJOB_AGENT_PROVIDER"),
+    )
 
     @property
     def database_url(self) -> str:
