@@ -19,12 +19,14 @@ from __future__ import annotations
 
 import json
 import secrets
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..capture_registry import required_version
 from ..dedupe import fingerprint
 from ..deps import get_session
 from ..gate import inspect
@@ -67,6 +69,8 @@ async def ingest_browser(
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
+    _check_adapter_version(settings.capture_registry, payload)
+
     result = _store(session, payload)
 
     response = Response(
@@ -101,6 +105,19 @@ def ingest_browser_preflight(request: Request) -> Response:
             "vary": "origin",
         },
     )
+
+
+def _check_adapter_version(registry: Path, payload: CaptureBatch) -> None:
+    minimum = required_version(registry, payload.adapter)
+    if minimum is not None and payload.adapter_version < minimum:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"adapter {payload.adapter!r} is version {payload.adapter_version}, "
+                f"but this server needs at least {minimum}. "
+                "Rebuild the bookmarklet with `make bookmarklet` and replace its URL."
+            ),
+        )
 
 
 def _check_enabled(token: str | None, allowlist: tuple[str, ...]) -> None:

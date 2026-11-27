@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     # also means the bookmarklet is off until it is configured.
     allowed_origins: str = ""
 
+    # Where the minimum adapter versions live. Missing or malformed means
+    # "accept everything": this is a freshness check, not a security control.
+    capture_registry: Path = Path("capture/registry.json")
+
     # Documented as AGENT_PROVIDER; the DABJOB_ form is accepted too so a
     # prefixed environment stays consistent.
     agent_provider: str = Field(

@@ -39,8 +39,7 @@ def _batch(**overrides: object) -> dict[str, object]:
     return {"adapter": "boss-detail", "adapter_version": 1, "items": [item]}
 
 
-@pytest.fixture
-def browser(tmp_path: Path) -> Iterator[tuple[TestClient, FastAPI]]:
+def make_browser(tmp_path: Path, **overrides: object) -> tuple[TestClient, FastAPI]:
     settings = Settings(
         data_dir=tmp_path,
         host="127.0.0.1",
@@ -48,14 +47,20 @@ def browser(tmp_path: Path) -> Iterator[tuple[TestClient, FastAPI]]:
         static_dir=tmp_path / "no-build",
         token=TOKEN,
         allowed_origins=ORIGIN,
+        **overrides,  # type: ignore[arg-type]
     )
     config = Config(str(ALEMBIC_INI))
     config.set_main_option("sqlalchemy.url", settings.database_url)
     command.upgrade(config, "head")
-
     app = create_app(settings)
-    with TestClient(app) as client:
-        yield client, app
+    return TestClient(app), app
+
+
+@pytest.fixture
+def browser(tmp_path: Path) -> Iterator[tuple[TestClient, FastAPI]]:
+    client, app = make_browser(tmp_path)
+    with client as test_client:
+        yield test_client, app
 
 
 def _post(client: TestClient, body: dict[str, object] | str) -> Any:
@@ -277,3 +282,39 @@ def test_a_preflight_from_a_foreign_origin_is_refused(
     )
 
     assert response.status_code == 403
+
+
+def test_a_stale_adapter_is_told_to_rebuild(tmp_path: Path) -> None:
+    registry = tmp_path / "registry.json"
+    registry.write_text('{"adapters": {"boss-detail": {"min_version": 2}}}', encoding="utf-8")
+
+    client, _ = make_browser(tmp_path, capture_registry=registry)
+    with client:
+        response = _post(client, _batch())
+
+    assert response.status_code == 409
+    assert "Rebuild the bookmarklet" in response.json()["detail"]
+
+
+def test_an_unknown_adapter_is_accepted(tmp_path: Path) -> None:
+    """Adapters outside the tree are allowed: the registry tracks freshness,
+    it is not an allow-list."""
+    registry = tmp_path / "registry.json"
+    registry.write_text('{"adapters": {"boss-detail": {"min_version": 9}}}', encoding="utf-8")
+    payload = {"adapter": "my-own-adapter", "adapter_version": 1, "items": [ITEM]}
+
+    client, _ = make_browser(tmp_path, capture_registry=registry)
+    with client:
+        response = _post(client, payload)
+
+    assert response.status_code == 200
+    assert response.json()["accepted"] == 1
+
+
+def test_a_missing_registry_accepts_everything(tmp_path: Path) -> None:
+    """A freshness check must never lock a user out of their own tool."""
+    client, _ = make_browser(tmp_path, capture_registry=tmp_path / "absent.json")
+    with client:
+        response = _post(client, _batch())
+
+    assert response.status_code == 200

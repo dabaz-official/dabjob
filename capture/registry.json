@@ -1,0 +1,6 @@
+{
+  "$comment": "Minimum versions the server accepts. Bump an entry when an adapter's output changes meaning, and the old bookmarklet starts failing with a message telling the user to rebuild it.",
+  "adapters": {
+    "boss-detail": { "min_version": 1, "platform": "boss" }
+  }
+}
