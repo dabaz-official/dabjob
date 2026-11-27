@@ -89,3 +89,40 @@ class ProfileDocumentSummary(BaseModel):
 
 class ProfileDocumentDetail(ProfileDocumentSummary):
     extracted_text: str
+
+
+class ProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    years_experience: int | None = None
+    target_roles: list[str] = Field(default_factory=list)
+    target_cities: list[str] = Field(default_factory=list)
+    salary_floor: int | None = None
+    strengths: str | None = None
+    gaps: str | None = None
+    positioning: str | None = None
+    target_fit: str | None = None
+    updated_at: datetime
+
+
+class ProfileUpdate(BaseModel):
+    years_experience: int | None = Field(default=None, ge=0, le=60)
+    target_roles: list[str] | None = None
+    target_cities: list[str] | None = None
+    salary_floor: int | None = Field(default=None, ge=0)
+    strengths: str | None = None
+    gaps: str | None = None
+    positioning: str | None = None
+    target_fit: str | None = None
+
+
+class AssessmentDraft(BaseModel):
+    """A proposal, not a result: the user edits it and saves the profile."""
+
+    task_id: int
+    transport: str
+    strengths: list[str] = Field(default_factory=list)
+    gaps: list[str] = Field(default_factory=list)
+    target_fit: str = ""
+    positioning: str = ""

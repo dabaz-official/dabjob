@@ -165,6 +165,11 @@ class Profile(TimestampMixin, Base):
     salary_floor: Mapped[int | None] = mapped_column(Integer)
     strengths: Mapped[str | None] = mapped_column(Text)
     gaps: Mapped[str | None] = mapped_column(Text)
+    # Produced by the profile assessment: the two paragraphs a model writes
+    # and the user edits. Stored because regenerating to read them again is
+    # not a feature.
+    positioning: Mapped[str | None] = mapped_column(Text)
+    target_fit: Mapped[str | None] = mapped_column(Text)
 
 
 class ProfileDocument(TimestampMixin, Base):

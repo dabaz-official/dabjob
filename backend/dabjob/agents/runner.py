@@ -26,7 +26,10 @@ def run_task(
         kind=envelope.task,
         transport=transport.name,
         status=AgentTaskStatus.RUNNING,
-        input=envelope.model_dump(mode="json"),
+        # The task's payload, not the whole envelope: kind and transport are
+        # already columns, and nesting the payload under "input" inside an
+        # "input" column makes the audit row harder to read, not easier.
+        input=envelope.input,
         job_id=job_id,
     )
     session.add(task)
