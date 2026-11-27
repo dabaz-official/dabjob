@@ -8,6 +8,7 @@ up on a user's upgrade, months later, with their data in it.
 from __future__ import annotations
 
 from collections.abc import Iterator
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -16,12 +17,13 @@ from alembic.config import Config
 from alembic.migration import MigrationContext
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, StatementError
 from sqlalchemy.orm import Session, sessionmaker
 
 from alembic import command
 from dabjob.config import Settings
 from dabjob.db import build_engine, build_sessionmaker
+from dabjob.migration_support import include_object
 from dabjob.models import Application, Base, Company, Job, PipelineStatus
 
 EXPECTED_TABLES = {
@@ -74,16 +76,21 @@ def test_models_declare_every_table() -> None:
 def test_migration_creates_the_same_tables(migrated_url: str) -> None:
     engine = create_engine(migrated_url)
 
-    tables = set(inspect(engine).get_table_names()) - {"alembic_version"}
+    tables = {
+        name
+        for name in inspect(engine).get_table_names()
+        if not name.startswith("job_fts") and name != "alembic_version"
+    }
 
     assert tables == EXPECTED_TABLES
+    assert inspect(engine).get_table_names().count("job_fts") == 1
 
 
 def test_migration_matches_the_models(migrated_url: str) -> None:
     engine = create_engine(migrated_url)
 
     with engine.connect() as connection:
-        context = MigrationContext.configure(connection)
+        context = MigrationContext.configure(connection, opts={"include_object": include_object})
         differences = compare_metadata(context, Base.metadata)
 
     assert differences == []
@@ -114,6 +121,39 @@ def test_enums_are_stored_as_values(db: tuple[Engine, sessionmaker[Session]]) ->
 
     # 'saved', not 'SAVED': a database you can read without the app.
     assert stored == PipelineStatus.SAVED.value == "saved"
+
+
+def test_timestamps_round_trip_as_utc(db: tuple[Engine, sessionmaker[Session]]) -> None:
+    """SQLite drops tzinfo; the type decorator has to put it back."""
+    engine, session_factory = db
+
+    with session_factory() as session:
+        job = Job(platform="boss", title="Backend engineer")
+        session.add(job)
+        session.commit()
+        job_id = job.id
+
+    with engine.connect() as connection:
+        stored = connection.execute(text("SELECT captured_at FROM job")).scalar_one()
+    # Written as a naive UTC string: SQLite keeps no offset.
+    assert isinstance(stored, str)
+    assert stored.endswith("Z") is False and "+" not in stored
+
+    with session_factory() as session:
+        loaded = session.get(Job, job_id)
+        assert loaded is not None
+        assert loaded.captured_at.tzinfo is not None
+        assert loaded.captured_at.utcoffset() == timedelta(0)
+
+
+def test_a_naive_timestamp_is_refused(db: tuple[Engine, sessionmaker[Session]]) -> None:
+    _, session_factory = db
+
+    with session_factory() as session, pytest.raises(StatementError, match="naive datetime"):
+        session.add(
+            Job(platform="boss", title="Backend engineer", captured_at=datetime(2026, 1, 1))
+        )
+        session.commit()
 
 
 def test_database_rejects_an_unknown_status(db: tuple[Engine, sessionmaker[Session]]) -> None:

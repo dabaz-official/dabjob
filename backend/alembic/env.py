@@ -15,6 +15,7 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from dabjob.config import Settings
+from dabjob.migration_support import include_object
 from dabjob.models import Base
 
 config = context.config
@@ -37,6 +38,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         render_as_batch=True,
+        include_object=include_object,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -57,6 +59,7 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             render_as_batch=True,
+            include_object=include_object,
         )
         with context.begin_transaction():
             context.run_migrations()

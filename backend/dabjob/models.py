@@ -29,11 +29,38 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.engine import Dialect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.types import TypeDecorator
 
 
 def utcnow() -> datetime:
     return datetime.now(UTC)
+
+
+class UTCDateTime(TypeDecorator[datetime]):
+    """Store UTC, return UTC.
+
+    SQLite has no timezone type: a value is written as a naive string and
+    comes back naive. Without this decorator every timestamp in the database
+    silently loses its offset, and a subtraction like "days until the follow
+    up" depends on the machine's locale.
+    """
+
+    impl = DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            raise ValueError("naive datetime: pass an aware UTC value")
+        return value.astimezone(UTC).replace(tzinfo=None)
+
+    def process_result_value(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if value is None:
+            return None
+        return value.replace(tzinfo=UTC)
 
 
 class Base(DeclarativeBase):
@@ -119,10 +146,8 @@ class EventKind(enum.StrEnum):
 
 
 class TimestampMixin:
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, onupdate=utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
 
 
 # ── The person ─────────────────────────────────────────────────────────────
@@ -172,6 +197,10 @@ class Job(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     company_id: Mapped[int | None] = mapped_column(ForeignKey("company.id", ondelete="SET NULL"))
+    # The company name as it appeared on the posting. Denormalised on purpose:
+    # it is what the FTS index and the dedupe rule read, and a posting is a
+    # snapshot — renaming the company entity later must not rewrite history.
+    company_name: Mapped[str] = mapped_column(String(255), default="", server_default="")
 
     platform: Mapped[str] = mapped_column(String(64))
     external_id: Mapped[str | None] = mapped_column(String(255))
@@ -186,7 +215,7 @@ class Job(TimestampMixin, Base):
 
     # Filled by the dedupe rule in M2; indexed now so the lookup is not a scan.
     fingerprint: Mapped[str | None] = mapped_column(String(64), index=True)
-    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    captured_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
 class Skill(TimestampMixin, Base):
@@ -258,9 +287,9 @@ class ApplicationEvent(Base):
         ForeignKey("application.id", ondelete="CASCADE"), index=True
     )
     kind: Mapped[EventKind] = mapped_column(_enum(EventKind, "event_kind"))
-    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    occurred_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     body: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
 # ── Where it came from ─────────────────────────────────────────────────────
@@ -279,7 +308,7 @@ class IngestRun(TimestampMixin, Base):
     duplicates: Mapped[int] = mapped_column(Integer, default=0)
     failed: Mapped[int] = mapped_column(Integer, default=0)
     error: Mapped[str | None] = mapped_column(Text)
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
 
 class IngestItem(Base):
@@ -293,7 +322,7 @@ class IngestItem(Base):
     raw_payload: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     gate_flags: Mapped[list[str]] = mapped_column(JSON, default=list)
     error: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
 # ── What the agent did ─────────────────────────────────────────────────────
@@ -320,7 +349,7 @@ class AgentTask(TimestampMixin, Base):
     tokens_out: Mapped[int] = mapped_column(Integer, default=0)
     cost: Mapped[float | None] = mapped_column(Float)
     error: Mapped[str | None] = mapped_column(Text)
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
 
 class AgentAction(Base):
@@ -338,9 +367,9 @@ class AgentAction(Base):
         _enum(AgentActionStatus, "agent_action_status"), default=AgentActionStatus.PROPOSED
     )
     decided_by: Mapped[str | None] = mapped_column(String(64))
-    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    decided_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    applied_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
 # ── Configuration ──────────────────────────────────────────────────────────
@@ -351,6 +380,4 @@ class Setting(Base):
 
     key: Mapped[str] = mapped_column(String(120), primary_key=True)
     value: Mapped[dict[str, Any] | None] = mapped_column(JSON)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, onupdate=utcnow
-    )
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
