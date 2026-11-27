@@ -22,6 +22,7 @@ Nothing is comparable, nothing is searchable, and the things that matter most �
 - **Builds a gap matrix.** Which skills the market asks for, weighted by how often they appear, against your own level: met, partial, missing. Ordered by what is worth learning next.
 - **Scores explainably.** Hard filters first, then a rule score over skill coverage, salary, city and seniority. A model may annotate and adjust by at most ±10 points, and every number carries a written reason.
 - **Holds the pipeline.** Board, status history, communication timeline, and a follow-up query that answers "what have I left hanging."
+- **Lets an agent operate it.** A typed tool surface means an agent — Hermes, Claude Code, Codex, or a local model — can answer "which companies asked for Kubernetes and then went quiet?" against real rows. It reads freely, and every change it proposes waits for your confirmation.
 - **Imports and exports.** Always, in a documented format.
 
 ```
@@ -34,7 +35,9 @@ bookmarklet · paste · CSV/JSON · existing tool
       ▼             ▼             ▼
   gap matrix    ranked jobs    pipeline board
                     │
-                    ▼  export anytime
+        ┌───────────┴───────────┐
+        ▼                       ▼
+      web UI            typed tool API → agent
 ```
 
 ## What DabJob does not do
@@ -49,6 +52,7 @@ The two are meant to compose. That project does not hold state — its tracker i
 | Cross-posting search | no | no | **yes** |
 | Dedupe by platform id | manual | no | **yes** |
 | Follow-up tracking | manual | draft only | **yes** |
+| Agent can query and update it | no | through files | **yes, by typed tools** |
 | Writes your CV | no | **yes** | no |
 | Needs a paid model | no | yes | **no** |
 | Where your data lives | a file | tracked in git | a local DB, untracked |
@@ -61,9 +65,10 @@ So the boundary is structural here: the database lives under `data/`, which `.gi
 
 ## Design decisions worth knowing before you contribute
 
-- **Zero-LLM operation.** `manual` is the default provider and the application must be fully usable with nothing configured. A model is optional; a local one works.
+- **Zero-agent operation.** `manual` is the default transport and the application must be fully usable with nothing configured. A model or an agent is optional; a local one works. `D2`.
 - **Rules score, the model explains.** No opaque ranking. `D5`.
 - **Job postings are untrusted input.** Every posting passes a deterministic gate that strips hidden text and invisible characters and flags instruction-shaped lines before anything is displayed or sent to a model. `D10`.
+- **The agent proposes, the human decides.** Read tools are open; every write is a proposal you confirm. No timers, no autonomous runs, no bulk mutations. `D11`, `D12`.
 - **Capture only what you can see.** A human opens the page and triggers it. No automation, no captcha bypass, no proxies, no concurrency. `D1`.
 - **Interoperability over lock-in.** Import and export are permanent; a feature that only works because your data cannot leave is rejected. `D9`.
 
@@ -73,13 +78,15 @@ The full list, with rationale and consequences, is [`ROADMAP.md` §3](ROADMAP.md
 
 | | Milestone | State |
 |---|---|---|
-| M0 | Scaffold, Docker, demo data, policy docs | not started |
-| M1 | Data layer, paste and CSV ingest, `ai-job-search` import, search | not started |
-| M2 | Profile and self-assessment | not started |
-| M3 | Capture adapters (BOSS直聘 first) | not started |
-| M4 | Skill synthesis and gap matrix | not started |
-| M5 | Scoring, charts, pipeline board | not started |
-| M6 | OpenAI-compatible provider, export, backup | not started |
+| M0 | Scaffold, Docker, i18n, CI | not started |
+| M1 | Data layer, search, agent protocol | not started |
+| M2 | Ingest, integrity gate, `ai-job-search` import | not started |
+| M3 | Profile, self-assessment, first transport | not started |
+| M4 | Capture adapters (BOSS直聘 first) | not started |
+| M5 | Skill synthesis and gap matrix | not started |
+| M6 | Scoring, charts, pipeline board | not started |
+| M7 | Agent tool layer and natural-language query | not started |
+| M8 | Agent runtimes, export, backup | not started |
 
 Each milestone has written acceptance criteria in [`ROADMAP.md` §6](ROADMAP.md#6-milestones).
 
@@ -97,7 +104,7 @@ with `make setup && make dev` for contributors who want a local toolchain. If ei
 
 Read [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`GOVERNANCE.md`](GOVERNANCE.md) first. This project has a short, deliberately narrow scope, and most declined pull requests are good work that did not know about it.
 
-The short version: capture adapters, importers, model providers, and skill/scoring data are the extension points; translations are always welcome. Multi-user, auto-apply, captcha bypass, hosted sync, document generation, and runtime plugin loading are refused in review — not deferred.
+The short version: capture adapters, importers, analysis transports, and skill/scoring data are the extension points; translations are always welcome. Multi-user, auto-apply, captcha bypass, hosted sync, document generation, autonomous agents, and runtime plugin loading are refused in review — not deferred.
 
 ## License
 
