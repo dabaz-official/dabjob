@@ -14,7 +14,7 @@ $(VENV)/bin/python:
 frontend/node_modules: frontend/package.json
 	$(NPM) install
 
-.PHONY: help setup dev test lint check-private migrate demo
+.PHONY: help setup dev test lint check-private migrate demo import-csv
 
 help: ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -36,6 +36,9 @@ migrate: $(VENV)/bin/python ## Apply database migrations
 
 demo: migrate ## Seed the invented demo dataset
 	$(PY) -m dabjob.demo
+
+import-csv: migrate ## Import a CSV or JSON export (FILE=path/to/file.csv)
+	$(PY) -m dabjob.tabular "$(FILE)"
 
 check-private: ## Fail if private data looks committed
 	$(PY) scripts/check_private_data.py

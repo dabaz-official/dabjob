@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -27,6 +27,13 @@ from ..models import (
 )
 from ..parse import parse_job
 from ..schemas import JobSummary
+from ..tabular import (
+    ImportOutcome,
+    Table,
+    import_rows,
+    read_table,
+    suggest_mapping,
+)
 
 router = APIRouter(prefix="/api/ingest", tags=["ingest"])
 
@@ -113,3 +120,81 @@ def ingest_paste(payload: PasteRequest, session: SessionDep, response: Response)
         job=JobSummary.model_validate(job),
         flags=list(gate.flags),
     )
+
+
+MAX_TABULAR_CHARS = 2_000_000
+
+
+class TabularPreviewRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=MAX_TABULAR_CHARS)
+
+
+class TabularPreview(BaseModel):
+    headers: list[str]
+    suggested_mapping: dict[str, str | None]
+    row_count: int
+    sample: list[dict[str, str]]
+
+
+class TabularImportRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=MAX_TABULAR_CHARS)
+    mapping: dict[str, str | None] | None = None
+    platform: str = Field(default="csv", min_length=1, max_length=64)
+
+
+class RowErrorOut(BaseModel):
+    row: int
+    error: str
+
+
+class TabularImportResult(BaseModel):
+    run_id: int
+    accepted: int
+    duplicates: int
+    failed: int
+    errors: list[RowErrorOut] = Field(default_factory=list)
+
+
+@router.post("/tabular/preview")
+def preview_tabular(payload: TabularPreviewRequest) -> TabularPreview:
+    """Guess the mapping before anything is written."""
+    table = _read_or_400(payload.text)
+    return TabularPreview(
+        headers=list(table.headers),
+        suggested_mapping=suggest_mapping(table.headers),
+        row_count=len(table.rows),
+        sample=list(table.rows[:3]),
+    )
+
+
+@router.post("/tabular")
+def ingest_tabular(payload: TabularImportRequest, session: SessionDep) -> TabularImportResult:
+    table = _read_or_400(payload.text)
+    if not table.rows:
+        raise HTTPException(status_code=400, detail="no rows found")
+    mapping = payload.mapping or suggest_mapping(table.headers)
+
+    unknown = sorted(
+        {header for header in mapping.values() if header and header not in table.headers}
+    )
+    if unknown:
+        raise HTTPException(
+            status_code=400,
+            detail=f"mapping refers to unknown column(s): {', '.join(unknown)}",
+        )
+
+    outcome: ImportOutcome = import_rows(session, table, mapping, payload.platform)
+    return TabularImportResult(
+        run_id=outcome.run_id,
+        accepted=outcome.accepted,
+        duplicates=outcome.duplicates,
+        failed=outcome.failed,
+        errors=[RowErrorOut(row=item.row, error=item.error) for item in outcome.errors],
+    )
+
+
+def _read_or_400(text: str) -> Table:
+    try:
+        return read_table(text)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
