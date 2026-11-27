@@ -1,0 +1,39 @@
+{
+  "seen": {
+    "example-backend-engineer": {
+      "portal": "boss",
+      "title": "后端开发工程师",
+      "company": "示例科技",
+      "url": "https://example.com/jobs/1",
+      "status": "scored",
+      "strengths": ["Python", "PostgreSQL"],
+      "gaps": ["Kubernetes"],
+      "posted_date": "2026-03-01"
+    },
+    "northwind-frontend-engineer": {
+      "portal": "linkedin",
+      "title": "Senior Frontend Engineer",
+      "company": "Northwind Labs",
+      "url": "https://example.com/jobs/2",
+      "status": "scored",
+      "strengths": ["React", "TypeScript"],
+      "gaps": []
+    },
+    "blueharbor-platform": {
+      "portal": "csv",
+      "title": "Platform Engineer",
+      "company": "Blue Harbor",
+      "url": null,
+      "status": "unreachable",
+      "fetch_attempts": 3
+    },
+    "old-posting": {
+      "portal": "linkedin",
+      "title": "Data Analyst",
+      "company": "Northwind Labs",
+      "url": "https://example.com/jobs/3",
+      "status": "expired",
+      "expired_reason": "deadline passed"
+    }
+  }
+}

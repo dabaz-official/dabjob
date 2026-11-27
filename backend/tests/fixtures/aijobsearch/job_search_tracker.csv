@@ -1,0 +1,5 @@
+date,company,sector,role,role_type,channel,status,contact_person,fit_rating,notes,cv_file,cover_letter_file,source,deadline
+2026-03-02,示例科技,互联网,后端开发工程师,full-time,boss,applied,招聘专员,8,时区合适，双休,cv-v3.pdf,cl-v3.pdf,boss,2026-04-01
+2026-03-05,星尘网络,数据,数据分析师,full-time,referral,interview,用人经理,7,已过一面,cv-v3.pdf,cl-v4.pdf,linkedin,2026-04-10
+2026-03-11,蓝港,基础设施,平台工程师,full-time,linkedin,rejected,,5,岗位偏运维,,,linkedin,
+2026-03-14,北岸传媒,内容,内容编辑,full-time,boss,no_response,,4,,cv-v3.pdf,,boss,
