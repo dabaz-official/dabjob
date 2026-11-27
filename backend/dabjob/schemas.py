@@ -7,7 +7,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .models import PipelineStatus
+from .models import DocumentKind, PipelineStatus
 
 
 class JobSummary(BaseModel):
@@ -74,3 +74,14 @@ class ApplicationUpdate(BaseModel):
     channel: str | None = Field(default=None, max_length=64)
     resume_version: str | None = Field(default=None, max_length=120)
     next_follow_up_on: date | None = None
+
+
+class ProfileDocumentSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    kind: DocumentKind
+    filename: str
+    content_type: str | None = None
+    char_count: int
+    created_at: datetime
