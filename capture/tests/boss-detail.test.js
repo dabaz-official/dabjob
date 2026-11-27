@@ -88,3 +88,12 @@ test("no session token is read from the page", () => {
   const item = extract(doc);
   assert.equal(JSON.stringify(item).includes("securityId"), false);
 });
+
+test("the sticky header's job title is not mistaken for the company", () => {
+  // `.smallbanner .job-title` sits where a company name would be and repeats
+  // the job title. A real capture shipped with the title twice because of it.
+  const item = extract(load());
+
+  assert.equal(item.company, "示例科技有限公司");
+  assert.notEqual(item.company, item.title);
+});

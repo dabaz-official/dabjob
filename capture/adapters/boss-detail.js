@@ -25,8 +25,11 @@ const SELECTORS = {
   salary: ".info-primary .salary",
   city: ".info-primary .text-city",
   experience: ".info-primary .text-experiece",
-  company: ".smallbanner .company-info .name .job-title",
-  companyFallback: ".company-info .name",
+  // The company lives in the sidebar. `.smallbanner .job-title` looks like a
+  // company field but is the sticky header repeating the job title, so it is
+  // deliberately not used.
+  companyLinks: ".sider-company .company-info a",
+  companyFallback: ".sider-company p.title",
   description: ".job-detail-section .job-sec-text",
 };
 
@@ -55,7 +58,7 @@ export function extract(doc, pageUrl = "") {
     // must never be stored, so nothing here reads it.
     externalId: match ? match[1] : null,
     title: titleOf(doc),
-    company: text(doc, SELECTORS.company) || text(doc, SELECTORS.companyFallback),
+    company: companyOf(doc),
     city: text(doc, SELECTORS.city),
     salaryText: text(doc, SELECTORS.salary),
     seniority: text(doc, SELECTORS.experience),
@@ -91,6 +94,25 @@ function titleOf(doc) {
   }
   const value = (clone.textContent || "").replace(/\s+/g, " ").trim();
   return value || null;
+}
+
+/**
+ * The first sidebar company link with readable text. The logo link wraps an
+ * image and has no text, so it is skipped by the check rather than by index.
+ * The `title` attribute is the fallback when the anchor renders empty.
+ */
+function companyOf(doc) {
+  for (const node of doc.querySelectorAll(SELECTORS.companyLinks)) {
+    const label = (node.textContent || "").replace(/\s+/g, " ").trim();
+    if (label) {
+      return label;
+    }
+    const attribute = (node.getAttribute("title") || "").trim();
+    if (attribute) {
+      return attribute;
+    }
+  }
+  return text(doc, SELECTORS.companyFallback);
 }
 
 function text(doc, selector) {
