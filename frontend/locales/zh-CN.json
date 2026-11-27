@@ -1,0 +1,19 @@
+{
+  "app.title": "DabJob",
+  "app.name": "DabJob",
+  "app.tagline": "求职流程的本地状态层",
+  "nav.dashboard": "总览",
+  "dashboard.title": "总览",
+  "dashboard.empty.badge": "还没有数据",
+  "dashboard.empty.title": "这个库里还没有岗位",
+  "dashboard.empty.body": "粘贴一份 JD、导入一张表格，或者把书签脚本拖到浏览器栏。",
+  "dashboard.empty.hint": "数据只保存在这台机器上。",
+  "health.label": "后端连接",
+  "health.checking": "检查中",
+  "health.ok": "正常",
+  "health.unreachable": "无法连接",
+  "status.milestone": "当前阶段：{value}",
+  "notFound.title": "页面不存在",
+  "notFound.body": "这个地址没有对应的页面。",
+  "notFound.action": "回到总览"
+}
