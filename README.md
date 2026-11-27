@@ -5,9 +5,9 @@
 No account. No telemetry. Nothing leaves the machine except a model you configure yourself.
 
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![status: M0 complete](https://img.shields.io/badge/status-M0_complete-brightgreen.svg)](ROADMAP.md)
+[![status: M1 in progress](https://img.shields.io/badge/status-M1_in_progress-orange.svg)](ROADMAP.md)
 
-> **Status: M0 complete (2026-11-27).** The API and UI scaffold run, and the container path is verified in CI. There is no data layer yet — the database arrives with M1. [`ROADMAP.md`](ROADMAP.md) §6 is the build order, and every milestone carries written acceptance criteria.
+> **Status: M1 in progress.** The database, migrations and full-text search are in place, and five demo postings render in the UI. Ingest, the integrity gate and the agent protocol are next. [`ROADMAP.md`](ROADMAP.md) §6 is the build order, and every milestone carries written acceptance criteria.
 
 ## The problem
 
@@ -92,12 +92,15 @@ Each milestone has written acceptance criteria in [`ROADMAP.md` §6](ROADMAP.md#
 
 ## Getting started
 
-**The scaffold runs; there is nothing to do in it yet.** The API serves `/api/health`, the UI renders an empty dashboard, and the database arrives with M1.
-
 ```bash
 make setup      # venv, editable backend install, npm install
+make demo       # five invented postings, so there is something to look at
 make dev        # API on 127.0.0.1:8000, Vite on 127.0.0.1:5173
 ```
+
+Then open **http://127.0.0.1:5173**. The dashboard lists the postings and the search box queries the full-text index; searching `FastAPI` or `PyTorch` finds a demo entry with the match highlighted.
+
+`make demo` is idempotent — running it again inserts nothing. The demo rows are invented: no real person, company, address or phone number.
 
 The API and the UI run as two processes behind one proxy in development, and as one process in the container:
 

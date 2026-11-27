@@ -14,7 +14,7 @@ $(VENV)/bin/python:
 frontend/node_modules: frontend/package.json
 	$(NPM) install
 
-.PHONY: help setup dev test lint check-private migrate
+.PHONY: help setup dev test lint check-private migrate demo
 
 help: ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -33,6 +33,9 @@ test: $(VENV)/bin/python ## Run the backend test suite
 
 migrate: $(VENV)/bin/python ## Apply database migrations
 	$(ALEMBIC) -c backend/alembic.ini upgrade head
+
+demo: migrate ## Seed the invented demo dataset
+	$(PY) -m dabjob.demo
 
 check-private: ## Fail if private data looks committed
 	$(PY) scripts/check_private_data.py
