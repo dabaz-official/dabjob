@@ -7,6 +7,7 @@ a user's database has them.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -22,6 +23,26 @@ from dabjob.db import build_engine, build_sessionmaker
 from dabjob.main import create_app
 
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / "alembic.ini"
+
+
+# The suite must be hermetic. A developer's .env can point AGENT_PROVIDER at
+# a paid endpoint, which would make tests slow, expensive, and dependent on
+# what happens to be configured on this machine.
+for _name in (
+    "AGENT_PROVIDER",
+    "AGENT_BASE_URL",
+    "AGENT_MODEL",
+    "AGENT_API_KEY",
+    "AGENT_HEADERS",
+    "DABJOB_AGENT_PROVIDER",
+    "DABJOB_AGENT_BASE_URL",
+    "DABJOB_AGENT_MODEL",
+    "DABJOB_AGENT_API_KEY",
+    "DABJOB_AGENT_HEADERS",
+):
+    os.environ.pop(_name, None)
+
+Settings.model_config = {**Settings.model_config, "env_file": None}
 
 
 def _settings(tmp_path: Path) -> Settings:
