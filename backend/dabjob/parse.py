@@ -7,8 +7,11 @@ the UI. This is the rule path that must work with no model configured.
 
 from __future__ import annotations
 
+import json
 import re
-from dataclasses import dataclass
+import sys
+from dataclasses import asdict, dataclass
+from pathlib import Path
 
 CITY_NAMES: tuple[str, ...] = (
     "北京",
@@ -134,3 +137,23 @@ def _seniority(text: str) -> str | None:
     if match := _SENIORITY_EN.search(text):
         return match.group(1).lower().replace(" ", "-")
     return None
+
+
+def main() -> int:
+    """``make parse-jd FILE=...``: show what the rules extract, and what the
+    gate found, before anything is written."""
+    if len(sys.argv) < 2:
+        print("usage: python -m dabjob.parse FILE", file=sys.stderr)
+        return 2
+
+    from .gate import inspect
+
+    text = Path(sys.argv[1]).read_text(encoding="utf-8-sig")
+    gated = inspect(text)
+    report = {**asdict(parse_job(gated.text)), "flags": list(gated.flags)}
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

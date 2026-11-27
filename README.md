@@ -5,9 +5,9 @@
 No account. No telemetry. Nothing leaves the machine except a model you configure yourself.
 
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![status: M1 in progress](https://img.shields.io/badge/status-M1_in_progress-orange.svg)](ROADMAP.md)
+[![status: M2 complete](https://img.shields.io/badge/status-M2_complete-brightgreen.svg)](ROADMAP.md)
 
-> **Status: M1 in progress.** The database, migrations and full-text search are in place, and five demo postings render in the UI. Ingest, the integrity gate and the agent protocol are next. [`ROADMAP.md`](ROADMAP.md) §6 is the build order, and every milestone carries written acceptance criteria.
+> **Status: M2 complete (2026-11-27).** A local database with full-text search, three ingest paths (paste, CSV/JSON, an `ai-job-search` importer), the integrity gate, an editable pipeline, and the agent task protocol with its manual transport. M3 adds the résumé profile and the first real transport.
 
 ## The problem
 
@@ -79,8 +79,8 @@ The full list, with rationale and consequences, is [`ROADMAP.md` §3](ROADMAP.md
 | | Milestone | State |
 |---|---|---|
 | M0 | Scaffold, Docker, i18n, CI | **done** |
-| M1 | Data layer, search, agent protocol | not started |
-| M2 | Ingest, integrity gate, `ai-job-search` import | not started |
+| M1 | Data layer, search, agent protocol | **done** |
+| M2 | Ingest, integrity gate, `ai-job-search` import | **done** |
 | M3 | Profile, self-assessment, first transport | not started |
 | M4 | Capture adapters (BOSS直聘 first) | not started |
 | M5 | Skill synthesis and gap matrix | not started |

@@ -1,6 +1,6 @@
 # ROADMAP — DabJob
 
-**Status:** M0 complete (2026-11-27). The scaffold runs; the data layer starts at M1.
+**Status:** M2 complete (2026-11-27). Data layer, ingest, search and the agent protocol are in place; M3 starts the profile.
 **What it is:** the local state layer for a job search — a job-search CRM that an AI agent can operate, not a document generator.
 **Scope:** single local user, `localhost`, no auth, no telemetry. zh-CN UI shipped first, i18n-ready from day zero. English repository artifacts.
 **Positioning:** open source, multi-platform, interoperable. BOSS直聘 (`zhipin.com`) is the first capture adapter, not the product.
@@ -245,19 +245,19 @@ Tools are core, not an extension point: they mutate state and are reviewed again
 
 ## 6. Milestones
 
-M0 is complete. M1–M8 are not started; each acceptance line below is the contract for calling its milestone done.
+M0–M2 are complete. M3–M8 are not started; each acceptance line below is the contract for calling its milestone done.
 
 ### M0 — Scaffold, distribution, project policy · S — **done 2026-11-27**
 `backend/` FastAPI app with `/api/health`, SQLAlchemy session, settings, and fail-closed binding; `frontend/` Vite app with router, one empty Dashboard page, all copy behind `t()`; `locales/zh-CN.json`; `Makefile` (`setup`, `dev`, `test`, `lint`); `.env.example`; `.nvmrc`; `Dockerfile` + `compose.yml`; `.github/workflows/ci.yml` running lint, the full test matrix, the production build, the private-data guard, and a container smoke test. (`LICENSE`, `CONTRIBUTING.md`, `GOVERNANCE.md`, `AGENTS.md`, `README.md`, `.gitignore` already landed.)
 
 **Accept:** `make setup && make dev` serves the UI on Vite with `/api/health` returning `{"ok": true}`; `make test` runs an empty-but-green pytest suite; `make lint` passes; `docker compose up` serves the same UI from a clean machine with no host Python or Node, proven by the container job in CI; starting with `HOST=0.0.0.0` and no `DABJOB_ALLOW_REMOTE` exits non-zero with an explanatory message; no user-facing string is hardcoded in a component; the private-data guard fails on a tracked database, a tracked `.env`, or a fixture containing a real phone number or ID number.
 
-### M1 — Data layer, search, agent protocol · M
+### M1 — Data layer, search, agent protocol · M — **done 2026-11-27**
 Models for every table in §4; Alembic initial revision; FTS5 table + triggers; CRUD endpoints for jobs and applications; the task envelope and transport protocol (§3 D2) with `ManualProvider` only; `make demo` seeding five invented fixture jobs.
 
 **Accept:** `make demo && make dev` renders five jobs; `GET /api/jobs?q=FastAPI` returns FTS-ranked matches with snippets; editing a job title updates the index without a rebuild; the protocol is exercised by a contract test that any transport must pass, and `manual` passes it; no seed or fixture row contains a real person, company contact, or address.
 
-### M2 — Ingest, integrity gate, importer · L
+### M2 — Ingest, integrity gate, importer · L — **done 2026-11-27**
 Paste-import endpoint parsing title/company/city/salary from raw JD; the integrity gate wired into every ingest path, with a hostile fixture corpus; CSV/JSON import with a column-mapping preview; JD-parsing fixture corpus and `make parse-jd`; the `ai-job-search` importer reading `job_search_tracker.csv` and `job_scraper/seen_jobs.json` with source tracking.
 
 **Accept:** paste 5 real JDs, list renders them with parsed fields editable; importing a 100-row spreadsheet creates 100 applications linked to jobs; importing a real `ai-job-search` checkout produces the same application count as its tracker, and a second import adds nothing; a posting with hidden text is stripped and one with instruction-shaped lines is flagged before it can reach any transport; every hostile fixture asserts on both the stripped output and the flags raised.

@@ -14,7 +14,7 @@ $(VENV)/bin/python:
 frontend/node_modules: frontend/package.json
 	$(NPM) install
 
-.PHONY: help setup dev test lint check-private migrate demo import-csv import
+.PHONY: help setup dev test lint check-private migrate demo import-csv import parse-jd
 
 help: ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -39,6 +39,9 @@ demo: migrate ## Seed the invented demo dataset
 
 import-csv: migrate ## Import a CSV or JSON export (FILE=path/to/file.csv)
 	$(PY) -m dabjob.tabular "$(FILE)"
+
+parse-jd: $(VENV)/bin/python ## Show the fields the rules extract (FILE=path/to/jd.txt)
+	$(PY) -m dabjob.parse "$(FILE)"
 
 import: migrate ## Import an ai-job-search workspace (DIR=path/to/workspace)
 	$(PY) -m dabjob.importers.aijobsearch "$(DIR)"
