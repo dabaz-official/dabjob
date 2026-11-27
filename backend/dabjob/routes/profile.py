@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from ..deps import get_session
 from ..documents import EmptyDocument, UnsupportedDocument, extract_text
 from ..models import DocumentKind, ProfileDocument
-from ..schemas import ProfileDocumentSummary
+from ..schemas import ProfileDocumentDetail, ProfileDocumentSummary
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
@@ -37,6 +37,18 @@ def list_documents(session: SessionDep) -> list[ProfileDocumentSummary]:
         select(ProfileDocument).order_by(ProfileDocument.created_at.desc())
     ).all()
     return [_summary(document) for document in documents]
+
+
+@router.get("/documents/{document_id}")
+def get_document(document_id: int, session: SessionDep) -> ProfileDocumentDetail:
+    document = session.get(ProfileDocument, document_id)
+    if document is None:
+        raise HTTPException(status_code=404, detail=f"document {document_id} not found")
+
+    return ProfileDocumentDetail(
+        **_summary(document).model_dump(),
+        extracted_text=document.extracted_text or "",
+    )
 
 
 @router.post("/documents", status_code=status.HTTP_201_CREATED)

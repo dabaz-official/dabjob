@@ -42,5 +42,17 @@
   "status.milestone": "当前阶段：{value}",
   "notFound.title": "页面不存在",
   "notFound.body": "这个地址没有对应的页面。",
-  "notFound.action": "回到总览"
+  "notFound.action": "回到总览",
+  "nav.profile": "简历",
+  "profile.title": "简历与自评",
+  "profile.upload.title": "上传简历",
+  "profile.upload.hint": "支持 PDF、DOCX、Markdown 和纯文本。文件只保存在这台机器上。",
+  "profile.upload.action": "上传",
+  "profile.upload.sending": "解析中",
+  "profile.upload.done": "已解析 {count} 个字符",
+  "profile.upload.error": "上传失败：{reason}",
+  "profile.upload.scan": "这份文件里没有可用的文字，可能是扫描件。",
+  "profile.preview.title": "看到的文字",
+  "profile.preview.hint": "这是解析结果。如果中文被空格拆开或出现乱码，说明抽取质量有问题。",
+  "profile.empty": "还没有上传任何材料。"
 }

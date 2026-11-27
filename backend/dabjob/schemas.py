@@ -85,3 +85,7 @@ class ProfileDocumentSummary(BaseModel):
     content_type: str | None = None
     char_count: int
     created_at: datetime
+
+
+class ProfileDocumentDetail(ProfileDocumentSummary):
+    extracted_text: str

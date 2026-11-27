@@ -161,3 +161,22 @@ def test_documents_can_be_listed(client: tuple[TestClient, FastAPI]) -> None:
 
     assert len(body) == 2
     assert {item["filename"] for item in body} == {"a.md", "b.md"}
+
+
+def test_the_extracted_text_can_be_read_back(client: tuple[TestClient, FastAPI]) -> None:
+    http, _ = client
+    created = http.post(
+        "/api/profile/documents",
+        files={"file": ("resume.md", RESUME_ZH.encode(), "text/markdown")},
+    ).json()
+
+    response = http.get(f"/api/profile/documents/{created['id']}")
+
+    assert response.status_code == 200
+    assert "张三" in response.json()["extracted_text"]
+
+
+def test_an_unknown_document_is_404(client: tuple[TestClient, FastAPI]) -> None:
+    http, _ = client
+
+    assert http.get("/api/profile/documents/9999").status_code == 404

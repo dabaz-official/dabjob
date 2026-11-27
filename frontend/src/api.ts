@@ -67,3 +67,37 @@ export async function updateJob(id: number, changes: JobChanges): Promise<JobSum
   }
   return (await response.json()) as JobSummary;
 }
+
+export type ProfileDocument = {
+  id: number;
+  kind: string;
+  filename: string;
+  content_type: string | null;
+  char_count: number;
+  created_at: string;
+};
+
+export type ProfileDocumentDetail = ProfileDocument & {
+  extracted_text: string;
+};
+
+export async function uploadDocument(file: File, kind = "resume"): Promise<ProfileDocument> {
+  const body = new FormData();
+  body.append("file", file);
+  body.append("kind", kind);
+
+  const response = await fetch("/api/profile/documents", { method: "POST", body });
+  if (!response.ok) {
+    const detail = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(detail?.detail ?? `request failed with ${response.status}`);
+  }
+  return (await response.json()) as ProfileDocument;
+}
+
+export async function fetchDocument(id: number): Promise<ProfileDocumentDetail> {
+  const response = await fetch(`/api/profile/documents/${id}`);
+  if (!response.ok) {
+    throw new Error(`request failed with ${response.status}`);
+  }
+  return (await response.json()) as ProfileDocumentDetail;
+}
