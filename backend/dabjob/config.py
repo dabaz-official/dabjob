@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     token: str | None = None
     static_dir: Path = Path("frontend/dist")
 
+    # Comma-separated origins allowed to POST to the browser ingest endpoint,
+    # e.g. "https://www.zhipin.com". Empty means no origin is trusted, which
+    # also means the bookmarklet is off until it is configured.
+    allowed_origins: str = ""
+
     # Documented as AGENT_PROVIDER; the DABJOB_ form is accepted too so a
     # prefixed environment stays consistent.
     agent_provider: str = Field(
@@ -61,6 +66,14 @@ class Settings(BaseSettings):
         default_factory=dict,
         validation_alias=AliasChoices("AGENT_HEADERS", "DABJOB_AGENT_HEADERS"),
     )
+
+    @property
+    def origin_allowlist(self) -> tuple[str, ...]:
+        return tuple(
+            origin.strip().rstrip("/").lower()
+            for origin in self.allowed_origins.split(",")
+            if origin.strip()
+        )
 
     @property
     def database_url(self) -> str:

@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from . import applications, health, ingest, jobs, profile
+from . import applications, browser_ingest, health, ingest, jobs, profile
 
-__all__ = ["applications", "health", "ingest", "jobs", "profile"]
+__all__ = ["applications", "browser_ingest", "health", "ingest", "jobs", "profile"]

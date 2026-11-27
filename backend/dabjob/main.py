@@ -14,7 +14,7 @@ from fastapi import FastAPI
 
 from .config import Settings, enforce_bind_policy
 from .db import build_engine, build_sessionmaker
-from .routes import applications, health, ingest, jobs, profile
+from .routes import applications, browser_ingest, health, ingest, jobs, profile
 from .static import mount_spa
 
 
@@ -45,6 +45,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(applications.router)
     app.include_router(profile.router)
     app.include_router(ingest.router)
+    app.include_router(browser_ingest.router)
 
     mount_spa(app, resolved.static_dir)
 

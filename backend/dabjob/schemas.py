@@ -126,3 +126,34 @@ class AssessmentDraft(BaseModel):
     gaps: list[str] = Field(default_factory=list)
     target_fit: str = ""
     positioning: str = ""
+
+
+class CaptureItem(BaseModel):
+    """One posting as an adapter saw it. The contract in capture/schema.json
+    mirrors this: an adapter that produces this shape is accepted, and
+    nothing else is."""
+
+    platform: str = Field(min_length=1, max_length=64)
+    page_kind: str = Field(default="detail", max_length=64)
+    url: str | None = Field(default=None, max_length=2000)
+    external_id: str | None = Field(default=None, max_length=255)
+    title: str = Field(min_length=1, max_length=255)
+    company: str | None = Field(default=None, max_length=255)
+    city: str | None = Field(default=None, max_length=120)
+    salary_text: str | None = Field(default=None, max_length=255)
+    seniority: str | None = Field(default=None, max_length=64)
+    jd_text: str = ""
+
+
+class CaptureBatch(BaseModel):
+    adapter: str = Field(min_length=1, max_length=120)
+    adapter_version: int = Field(default=1, ge=1)
+    items: list[CaptureItem] = Field(min_length=1, max_length=200)
+
+
+class CaptureResult(BaseModel):
+    run_id: int
+    accepted: int
+    duplicates: int
+    failed: int
+    errors: list[str] = Field(default_factory=list)
