@@ -13,10 +13,10 @@ $(VENV)/bin/python:
 frontend/node_modules: frontend/package.json
 	$(NPM) install
 
-.PHONY: help setup dev test lint
+.PHONY: help setup dev test lint check-private
 
 help: ## Show the available targets
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-8s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
 
 setup: $(VENV)/bin/python frontend/node_modules ## Create the venv and install both sides
 	$(PIP) install --quiet --upgrade pip
@@ -28,9 +28,12 @@ dev: $(VENV)/bin/python frontend/node_modules ## Run the API and the Vite dev se
 		"$(NPM) run dev"
 
 test: $(VENV)/bin/python ## Run the backend test suite
-	$(PY) -m pytest
+	$(PY) -m pytest backend/tests
 
-lint: $(VENV)/bin/python frontend/node_modules ## Run ruff, mypy and tsc
+check-private: ## Fail if private data looks committed
+	$(PY) scripts/check_private_data.py
+
+lint: $(VENV)/bin/python frontend/node_modules check-private ## Run ruff, mypy, tsc and the private-data guard
 	$(PY) -m ruff check backend
 	$(PY) -m ruff format --check backend
 	$(PY) -m mypy backend

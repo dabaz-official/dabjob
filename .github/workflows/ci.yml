@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  lint:
+    name: lint and private-data guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: pip install -e "backend[dev]"
+      - run: npm ci --prefix frontend
+
+      - run: python -m ruff check backend
+      - run: python -m ruff format --check backend
+      - run: python -m mypy backend
+      - run: npm --prefix frontend run typecheck
+      - run: python scripts/check_private_data.py
+
+  test:
+    name: pytest (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: pip install -e "backend[dev]"
+      - run: python -m pytest backend/tests -q
+
+  web:
+    name: production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci --prefix frontend
+      - run: npm --prefix frontend run build
+
+  container:
+    name: container smoke test
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate the compose file
+        run: docker compose config --quiet
+
+      - name: Build the image
+        run: docker compose build
+
+      - name: Start and wait for the healthcheck
+        run: docker compose up --detach --wait --wait-timeout 120
+
+      - name: The API answers
+        run: curl -fsS http://127.0.0.1:8000/api/health | grep -q '"ok":true'
+
+      - name: The UI is served by the same process
+        run: |
+          curl -fsS http://127.0.0.1:8000/ | grep -q 'id="root"'
+          curl -fsS http://127.0.0.1:8000/jobs/42 | grep -q 'id="root"'
+
+      - name: Container logs
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop
+        if: always()
+        run: docker compose down --volumes
