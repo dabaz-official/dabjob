@@ -4,6 +4,7 @@ PY := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
 NPM := npm --prefix frontend
 CONCURRENTLY := frontend/node_modules/.bin/concurrently
+ALEMBIC := $(VENV)/bin/alembic
 
 .DEFAULT_GOAL := help
 
@@ -13,7 +14,7 @@ $(VENV)/bin/python:
 frontend/node_modules: frontend/package.json
 	$(NPM) install
 
-.PHONY: help setup dev test lint check-private
+.PHONY: help setup dev test lint check-private migrate
 
 help: ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -29,6 +30,9 @@ dev: $(VENV)/bin/python frontend/node_modules ## Run the API and the Vite dev se
 
 test: $(VENV)/bin/python ## Run the backend test suite
 	$(PY) -m pytest backend/tests
+
+migrate: $(VENV)/bin/python ## Apply database migrations
+	$(ALEMBIC) -c backend/alembic.ini upgrade head
 
 check-private: ## Fail if private data looks committed
 	$(PY) scripts/check_private_data.py

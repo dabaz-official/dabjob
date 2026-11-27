@@ -11,6 +11,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "sqlalchemy>=2.0",
+    "alembic>=1.13",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
 ]
@@ -32,6 +33,9 @@ testpaths = ["tests"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+# Alembic writes these files; formatting them by hand is lost on the next
+# `revision --autogenerate`, and their length is not a style choice.
+extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]

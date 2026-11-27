@@ -6,8 +6,10 @@ from typing import Any
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from .config import Settings
+from .models import Base
 
 
 def build_engine(settings: Settings) -> Engine:
@@ -36,3 +38,12 @@ def build_engine(settings: Settings) -> Engine:
             cursor.close()
 
     return engine
+
+
+def build_sessionmaker(engine: Engine) -> sessionmaker[Session]:
+    """Session factory bound to one engine. ``expire_on_commit=False`` keeps
+    objects readable after a commit, which the API handlers rely on."""
+    return sessionmaker(bind=engine, expire_on_commit=False, future=True)
+
+
+__all__ = ["Base", "build_engine", "build_sessionmaker"]
