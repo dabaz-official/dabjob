@@ -25,6 +25,19 @@ MIN_USEFUL_CHARS = 80
 SUPPORTED_SUFFIXES = (".pdf", ".docx", ".md", ".markdown", ".txt")
 
 _FORM_FEED = re.compile(r"\x0c")
+
+# PDF text is positioned glyph by glyph, so a wide gap between two Chinese
+# characters arrives as an ordinary space: "主 导从", "针 对". Chinese does
+# not space between characters, so any such space is an artefact. The cost
+# is that a separator written as a space ("昆仑巢 独立开发者") is joined too;
+# for a tool whose job is search and dedupe, a missing separator is cheaper
+# than a word the index cannot find.
+_CJK = "\u3400-\u4dbf\u4e00-\u9fff"
+_CJK_PUNCT = "\u3000-\u303f\uff01-\uff0f\uff1a-\uff20\u2014\u2026\u00b7"
+_CJK_JOIN = re.compile(rf"(?<=[{_CJK}])[ \t]+(?=[{_CJK}])")
+_PUNCT_JOIN = re.compile(
+    rf"(?<=[{_CJK}])[ \t]+(?=[{_CJK_PUNCT}])|(?<=[{_CJK_PUNCT}])[ \t]+(?=[{_CJK}])"
+)
 _BLANK_RUN = re.compile(r"\n{3,}")
 _TRAILING = re.compile(r"[ \t]+$", re.MULTILINE)
 
@@ -63,6 +76,8 @@ def extract_text(filename: str, data: bytes) -> str:
 
 def normalise(text: str) -> str:
     text = _FORM_FEED.sub("\n", text)
+    text = _CJK_JOIN.sub("", text)
+    text = _PUNCT_JOIN.sub("", text)
     text = _TRAILING.sub("", text)
     text = _BLANK_RUN.sub("\n\n", text)
     return text.strip()

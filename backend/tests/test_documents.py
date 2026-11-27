@@ -180,3 +180,21 @@ def test_an_unknown_document_is_404(client: tuple[TestClient, FastAPI]) -> None:
     http, _ = client
 
     assert http.get("/api/profile/documents/9999").status_code == 404
+
+
+def test_spaces_between_chinese_characters_are_removed() -> None:
+    """A PDF positions glyphs, so "主 导从" arrives spaced; Chinese never is."""
+    assert normalise("主 导从 Next.js 到 Shopify 的迁移") == "主导从 Next.js 到 Shopify 的迁移"
+
+
+def test_wrongly_spaced_punctuation_is_joined() -> None:
+    assert normalise("工作风格 ，统一工具配置 。") == "工作风格，统一工具配置。"
+
+
+def test_a_space_between_chinese_and_latin_is_kept() -> None:
+    """That space is real typography, not an artefact."""
+    assert normalise("熟悉 Python 与 PostgreSQL") == "熟悉 Python 与 PostgreSQL"
+
+
+def test_line_breaks_are_not_joined() -> None:
+    assert normalise("第一行\n第二行") == "第一行\n第二行"
