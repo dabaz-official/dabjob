@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 
 import { type JobSummary, fetchJobs } from "../api";
+import PastePanel from "../components/PastePanel";
 import { t } from "../i18n";
 
 type Health = "checking" | "ok" | "unreachable";
@@ -65,6 +66,7 @@ export default function Dashboard() {
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [state, setState] = useState<LoadState>("loading");
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,7 +110,7 @@ export default function Dashboard() {
     return () => {
       cancelled = true;
     };
-  }, [submitted]);
+  }, [submitted, reloadKey]);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -129,6 +131,8 @@ export default function Dashboard() {
           {t("health.label")}：{t(`health.${health}`)}
         </span>
       </div>
+
+      <PastePanel onImported={() => setReloadKey((value) => value + 1)} />
 
       <form className="flex gap-2" onSubmit={onSubmit}>
         <input

@@ -15,6 +15,13 @@ export type JobList = {
   total: number;
 };
 
+export type PasteResult = {
+  run_id: number;
+  outcome: "accepted" | "duplicate";
+  job: JobSummary | null;
+  flags: string[];
+};
+
 export async function fetchJobs(query = ""): Promise<JobList> {
   const params = new URLSearchParams();
   const trimmed = query.trim();
@@ -27,4 +34,16 @@ export async function fetchJobs(query = ""): Promise<JobList> {
     throw new Error(`request failed with ${response.status}`);
   }
   return (await response.json()) as JobList;
+}
+
+export async function pasteJob(text: string): Promise<PasteResult> {
+  const response = await fetch("/api/ingest/paste", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    throw new Error(`request failed with ${response.status}`);
+  }
+  return (await response.json()) as PasteResult;
 }
