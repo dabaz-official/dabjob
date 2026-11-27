@@ -30,6 +30,7 @@ These are refused even when well implemented, even with tests, even with an offe
 - Captcha/slider bypass, proxy pools, parallel scraping, headless mass crawling.
 - Dynamic loading of third-party plugin code at runtime.
 - **Document generation: tailored CVs, cover letters, interview coaching.** That is a different product and a good one already exists in this space. DabJob links to it and imports its state; it does not rebuild it. A PR that adds document generation is declined for scope even if it is excellent, because it turns a pipeline tool into a document factory and there is no principled stopping point.
+- **Autonomous agents.** Nothing runs on a timer, nothing applies without a person, and no agent may mutate the database without confirmation. A "scheduled agent" PR is declined however useful it looks.
 - Recruiter-side features.
 
 ## Constitutional invariants
@@ -38,12 +39,14 @@ Non-negotiable regardless of who proposes the change or how much it would help a
 
 1. **Local-first.** No telemetry, no phone-home, no account system, no default remote endpoint. A PR that adds an outbound request the user did not explicitly configure is rejected.
 2. **Fail-closed binding.** A non-loopback bind requires `DABJOB_ALLOW_REMOTE=1`. This may be made friendlier, better documented, or more prominent — it may not be removed or defaulted open.
-3. **Zero-LLM operation.** The application must be fully usable with no provider configured. `manual` remains the default. No feature may require an LLM to function, and the offline path must stay green in CI.
+3. **Zero-agent operation.** The application must be fully usable with no transport configured and no agent present. `manual` remains the default. No feature may require a model to function, the query box may be hidden, and the offline path must stay green in CI.
 4. **Human-driven capture.** Every capture is initiated by a human on a page that human may already view. No scheduler that navigates pages, no queue that fetches listings, no headless crawling. The Playwright adapter stays off by default.
 5. **No unattended third-party code.** Adapters are reviewed code: in-tree, or a file the user deliberately placed and can read. Nothing is fetched and executed at runtime, and no installer pulls adapter code from another repository. Manual copy is the security model, not an inconvenience to be automated away.
 6. **Explainable scores.** Any score shown to a user exposes its components and a written reason. A PR that replaces the rule score with an opaque number is rejected regardless of accuracy.
 7. **Untrusted input.** A job posting is an attacker-controlled document. Every ingest path runs the deterministic integrity gate before a posting is displayed, indexed, or handed to a provider. The gate is plain Python, tested against hostile fixtures, and may be strengthened but never bypassed or replaced by an LLM call.
 8. **Interoperability.** Import and export are permanent features, not migration incentives. A feature that only works because the user's data cannot leave is rejected, and an importer that becomes load-bearing is a regression.
+9. **Agent writes are proposals.** An agent may read the pipeline through typed tools without asking. It may never change a row directly: every mutation lands in `agent_action`, a human confirms it in the UI, and only then is it applied. This is what makes giving an agent tools acceptable at all.
+10. **No shared context between untrusted text and write tools.** An analysis task declares no tools. An operational task is never handed unsanitized posting text. A PR that passes a job description into a context with write tools available is rejected as a security bug, not a design preference.
 
 ## Adapter lifecycle
 
@@ -79,12 +82,23 @@ DabJob imports from other job-search tools because holding state and generating 
 
 A feature that exists only because data cannot leave DabJob is rejected. Export is always available.
 
-## Provider policy
+## Transport policy
 
-- `manual` is the default and is never removed.
-- Any provider must be installable without a paid account. `openai-compat` exists precisely so users can point at a local model.
-- A provider may never be required by the UI. When none is configured, the app reports `not_configured` and scores on rules alone.
-- Providers are selected only by `AGENT_PROVIDER`. No silent auto-detection based on which API keys happen to be in the environment.
+- `manual` is the default transport and is never removed.
+- Any transport must be usable without a paid account. `http` and `cli` both exist so a user can point at a local model or an agent they already pay for.
+- A transport may never be required by the UI. When none is configured, the app reports `not_configured`, the query box is hidden, and every screen still works on rules.
+- Transports are selected only by `AGENT_PROVIDER`. No silent auto-detection based on environment variables that happen to be set.
+- Transport output is validated against a schema. Unvalidated prose never enters the domain tables; a failure is retried once, then stored raw and surfaced.
+
+## Tool policy
+
+The typed tool surface is the contract between DabJob and any agent (`ROADMAP.md` §3 D11).
+
+- **Read tools are open.** They may be called without confirmation, and they never mutate.
+- **Write tools only propose.** They create an `agent_action` row. Applying it requires a human decision recorded in `decided_by`.
+- **No bulk mutation.** There is no tool that updates many rows at once, and no tool that deletes.
+- **New tools are core, not contributions.** A tool that touches state is reviewed against §1 before it is reviewed for quality. Adding a tool is a scope decision, not a refactor.
+- **Every tool call is attributable.** Each invocation is recorded on an `agent_task`, so a bad answer can be traced to the transport, the model, and the input.
 
 ## Security
 

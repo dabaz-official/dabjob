@@ -41,9 +41,11 @@ These are enforced in review and are not preferences:
 1. **No personal data in the repository.** No real résumés, recruiter threads, email addresses, or phone numbers — not in fixtures, not in tests, not in examples. Invent every fixture.
 2. **Every ingest path runs the integrity gate.** Job postings are untrusted input. Do not bypass the gate, and do not replace it with an LLM call.
 3. **No outbound request the user did not configure.** No telemetry, no phone-home, no default remote endpoint.
-4. **The zero-LLM path stays green.** `manual` is the default provider and the app must be fully usable with nothing configured.
+4. **The zero-agent path stays green.** `manual` is the default transport and the app must be fully usable with nothing configured.
 5. **Adapters stay pure.** A capture adapter maps DOM to `CaptureItem` and does nothing else — no fetch, no navigation, no storage.
 6. **No unattended third-party code.** Nothing is fetched and executed at runtime.
+7. **Agent writes are proposals.** An agent may read through tools; every mutation waits in `agent_action` for a human. No timers, no bulk updates, no deletes.
+8. **Untrusted text and write tools never share a context.** Analysis tasks run with no tools; operational tasks are not given unsanitized postings.
 
 ## Working rules
 

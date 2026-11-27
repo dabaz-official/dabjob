@@ -55,7 +55,7 @@ Everything outside this table is core, and is reviewed for scope before it is re
 |---|---|---|---|
 | Capture adapter | JavaScript | `CaptureItem` in `capture/schema.json` | HTML fixture → expected JSON |
 | Importer | Python | external format → internal model | snapshot fixture of the external format |
-| Agent provider | Python | `AgentProvider` protocol | provider matrix check |
+| Analysis transport | Python | task envelope → schema-valid JSON | recorded transcript, no network, no cost |
 | Skill dictionary, scoring presets | data | `skill` and `setting` schemas | fixture jobs with expected rankings |
 
 ### Writing a capture adapter
@@ -84,12 +84,19 @@ An importer reads another tool's job-search state into ours. This is a first-cla
 5. Make it idempotent: importing the same directory twice must create nothing the second time.
 6. Fail loudly on a field you cannot read, naming the file and the field. A silent partial import is worse than a refusal.
 
-### Writing a provider
+### Writing a transport
 
-- Implement `analyze_profile`, `analyze_job`, and `synthesize_skills`.
-- Return `not_configured` rather than raising when credentials are missing.
+A transport turns a task envelope into schema-valid JSON. The envelope and the per-task schemas are fixed; a transport only moves bytes.
+
+- Implement the shared contract test — it is the same test `manual`, `http`, and `cli` must pass.
+- Return `not_configured` rather than raising when credentials or an executable are missing.
 - Never become load-bearing: the app must keep working, on rules alone, when you are absent.
 - Do not require a paid account to run your tests. Mock the transport and assert on the payload shape.
+- Ship a recorded transcript so the suite runs offline and costs nothing.
+
+### Adding a tool
+
+Tools are core, not an extension point — they touch state. Read the *Tool policy* in `GOVERNANCE.md` first. A read tool needs a test that proves it cannot mutate. A write tool needs a test that proves nothing changes until a `decided_by` exists.
 
 ### Contributing data
 
