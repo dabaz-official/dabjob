@@ -15,7 +15,8 @@ import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const adapterName = process.argv[2] ?? "boss-detail";
+const snapshotMode = process.argv.includes("--snapshot");
+const adapterName = snapshotMode ? "snapshot" : (process.argv[2] ?? "boss-detail");
 const adapterPath = join(here, "adapters", `${adapterName}.js`);
 
 const token = process.env.DABJOB_TOKEN ?? "";
@@ -26,9 +27,30 @@ if (!token) {
   process.exit(1);
 }
 
-const source = readFileSync(adapterPath, "utf8");
+const source = snapshotMode ? "" : readFileSync(adapterPath, "utf8");
 // The adapter is a module for the tests; in a bookmarklet it is just code.
 const inlined = source.replace(/^export /gm, "");
+
+const snapshotSender = `
+(async () => {
+  try {
+    const html = "<!doctype html>\n" + document.documentElement.outerHTML;
+    const response = await fetch(${JSON.stringify(endpoint)} + "/api/ingest/snapshot?token=" + encodeURIComponent(${JSON.stringify(token)}) + "&adapter=" + encodeURIComponent(new URL(location.href).pathname.replace(/\\W+/g, "-").slice(0, 40)), {
+      method: "POST",
+      headers: { "content-type": "text/plain;charset=UTF-8" },
+      body: html
+    });
+    if (!response.ok) {
+      alert("DabJob snapshot: 后端返回 " + response.status + "\\n" + (await response.text()).slice(0, 300));
+      return;
+    }
+    const result = await response.json();
+    alert("DabJob snapshot: 已保存 " + result.bytes + " 字节\\n" + result.file);
+  } catch (error) {
+    alert("DabJob snapshot: 请求失败\\n" + error);
+  }
+})();
+`;
 
 const sender = `
 (async () => {
@@ -58,7 +80,9 @@ const sender = `
 const versionMatch = /version:\s*(\d+)/.exec(inlined);
 const version = versionMatch ? versionMatch[1] : "1";
 
-const script = `(() => {\n${inlined}\n${sender.replace("${VERSION}", version)}\n})();`;
+const script = snapshotMode
+  ? `(() => {\n${snapshotSender}\n})();`
+  : `(() => {\n${inlined}\n${sender.replace("${VERSION}", version)}\n})();`;
 const url = "javascript:" + encodeURIComponent(script);
 
 const outDir = join(here, "dist");

@@ -318,3 +318,42 @@ def test_a_missing_registry_accepts_everything(tmp_path: Path) -> None:
         response = _post(client, _batch())
 
     assert response.status_code == 200
+
+
+def test_a_snapshot_is_written_to_disk(browser: tuple[TestClient, FastAPI]) -> None:
+    client, app = browser
+    html = b"<html><body><ul class='job-list-box'></ul></body></html>"
+
+    response = client.post(
+        "/api/ingest/snapshot?token=" + TOKEN,
+        content=html,
+        headers={"origin": ORIGIN, "content-type": "text/plain;charset=UTF-8"},
+    )
+
+    assert response.status_code == 200
+    written = Path(response.json()["file"])
+    assert written.read_bytes() == html
+    assert written.parent == app.state.settings.data_dir / "snapshots"
+    assert response.json()["bytes"] == len(html)
+
+
+def test_a_snapshot_needs_the_token(browser: tuple[TestClient, FastAPI]) -> None:
+    client, _ = browser
+
+    response = client.post(
+        "/api/ingest/snapshot", content=b"<html></html>", headers={"origin": ORIGIN}
+    )
+
+    assert response.status_code == 401
+
+
+def test_an_empty_snapshot_is_rejected(browser: tuple[TestClient, FastAPI]) -> None:
+    client, _ = browser
+
+    response = client.post(
+        "/api/ingest/snapshot?token=" + TOKEN,
+        content=b"   ",
+        headers={"origin": ORIGIN, "content-type": "text/plain;charset=UTF-8"},
+    )
+
+    assert response.status_code == 400

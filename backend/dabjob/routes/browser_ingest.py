@@ -18,7 +18,9 @@ uglier URL.
 from __future__ import annotations
 
 import json
+import re
 import secrets
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -45,6 +47,8 @@ router = APIRouter(prefix="/api/ingest", tags=["ingest"])
 SessionDep = Annotated[Session, Depends(get_session)]
 
 MAX_BODY_BYTES = 256 * 1024
+# A page snapshot is a debugging aid, not an ingest: 2 MB fits a BOSS list page.
+MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024
 
 
 @router.post("/browser")
@@ -75,6 +79,49 @@ async def ingest_browser(
 
     response = Response(
         content=result.model_dump_json(),
+        media_type="application/json",
+    )
+    if origin:
+        response.headers["access-control-allow-origin"] = origin
+        response.headers["vary"] = "origin"
+    return response
+
+
+@router.post("/snapshot")
+async def capture_snapshot(
+    request: Request, token: str | None = None, adapter: str = "page"
+) -> Response:
+    """Save the page's current HTML under data/snapshots/.
+
+    This exists because a site may hide its rendered DOM from everything but
+    the page itself: BOSS reloads when Developer Tools opens, so "Copy
+    outerHTML" is not an option. A bookmarklet runs inside the page and is
+    not detected, which makes this the only reliable way to obtain a real DOM
+    to write an adapter against.
+    """
+    settings = request.app.state.settings
+    origin = request.headers.get("origin")
+
+    _check_enabled(settings.token, settings.origin_allowlist)
+    _check_origin(origin, settings.origin_allowlist)
+    _check_token(settings.token, token, request)
+
+    body = await request.body()
+    if len(body) > MAX_SNAPSHOT_BYTES:
+        raise HTTPException(status_code=413, detail="snapshot is larger than 2 MB")
+    if not body.strip():
+        raise HTTPException(status_code=400, detail="empty snapshot")
+
+    directory = settings.data_dir / "snapshots"
+    directory.mkdir(parents=True, exist_ok=True)
+
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    safe_adapter = re.sub(r"[^a-z0-9-]", "", adapter.lower())[:40] or "page"
+    path = directory / f"{stamp}-{safe_adapter}.html"
+    path.write_bytes(body)
+
+    response = Response(
+        content=json.dumps({"file": str(path), "bytes": len(body)}, ensure_ascii=False),
         media_type="application/json",
     )
     if origin:
